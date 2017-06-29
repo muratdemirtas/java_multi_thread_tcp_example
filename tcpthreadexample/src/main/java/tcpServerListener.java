@@ -55,7 +55,7 @@ public class tcpServerListener extends Thread {
 
                 try
                 {
-                    System.out.println("TCP Server listening on port : " + m_serverPort);
+                    System.out.println("TCP New Connections pending on port : " + m_serverPort);
                     new tcpServerListener(serverSocket.accept());
 
                 }   catch (IOException e) {
@@ -68,9 +68,13 @@ public class tcpServerListener extends Thread {
             System.exit(2);
         }
     }
-
+    
+    /**
+     * java thread entry point
+     */
     @Override
-    public void run(){
+    public void run()
+    {
         System.out.println("[TCP]New thread created for this session");
         System.out.println("[TCP]Thread ID is: " + Thread.currentThread().getId());
 
@@ -78,7 +82,6 @@ public class tcpServerListener extends Thread {
             String m_clientRecvData= "";
             String m_clientIPAddress = clientSocket.getInetAddress().toString();
             System.out.println("[TCP]New Connection!! IP: " + m_clientIPAddress );
-
 
             if(m_clientIPAddress.equals("/127.0.0.1"))
                 System.out.println("[TCP]This connection coming from localhost");
@@ -103,10 +106,6 @@ public class tcpServerListener extends Thread {
 
                 String response = parseJsonMessage(m_clientRecvData);
                 out.println(response);
-
-
-
-
             }
             System.out.println("[TCP]Remote client closed connection,thread exiting");
             clientSocket.close();
@@ -117,35 +116,52 @@ public class tcpServerListener extends Thread {
         }
     }
 
-
+    /**
+     * For processing json data.
+     * @param tcp json data 
+     * @return response message of client
+     */
     private String parseJsonMessage(String data)
     {
 
-        String response = "";
-
+        /*try-catch for processing data*/
         try{
-
+            
+            /*parse tcp data*/
             JsonElement root = new JsonParser().parse(data);
 
+            /*check is root object parsed successfully*/
             if (root.isJsonObject()) {
+                
+                /*get who sending this data*/
                 JsonObject  root_object = root.getAsJsonObject();
                 String FROM = root_object.get("FROM").getAsString();
                 System.out.println("[TCP]Request From: "+ FROM);
 
+                /*get command request into json array*/
                 JsonArray cmd_list = root_object.getAsJsonArray("REQUESTS");
+                /*create response json array*/
                 JsonArray mainArray = new JsonArray();
 
-                /*
+                /* if you want to print
                 System.out.println(root_object.toString());
                 System.out.println(cmd_list.toString());
                 */
+                
+                /* to find array size*/
+                
                 int array_count=0;
+                
+                /* iterate json array with elements*/
                 for(JsonElement cmds : cmd_list){
 
+                    /*THIS SECTOR IS COMMAND RESPONSER SECTOR*/
+                    
                     if(cmd_list.get(array_count).getAsString().equals("GET_SYS_TIME"))
                     {
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
+                        
                         mainArray.add(dateFormat.format(date));
                     }
 
@@ -164,23 +180,23 @@ public class tcpServerListener extends Thread {
                             System.err.println("error occurred while reading IP");
                         }
                     }
-
+                    
+                    /*iterate to other elements of array*/
                     array_count++;
                 }
-
+                
+                /*return response message*/
                 return mainArray.toString();
 
             }
+            
             else{
                 System.out.println("data cant parse with gson");
             }
 
         }
         catch (JsonParseException e){
-
+                System.out.println("data cant parse with gson");
         }
-
-        return response;
     }
-
     }
